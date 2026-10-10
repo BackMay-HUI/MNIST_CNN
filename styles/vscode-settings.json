@@ -1,0 +1,44 @@
+// 《PyTorch 实战：MNIST 手写数字识别》—— VSCode Markdown PDF 插件配置
+//
+// 用法：把下面这些键**合并**进你的 VSCode settings.json
+//       （Ctrl+Shift+P -> "Preferences: Open User Settings (JSON)"）
+//       然后用 VSCode **打开文件夹** D:\Learning\Pytorch\MNIST_CNN
+//       （必须是打开文件夹，不能只是打开单个 .md 文件 —— styles 的相对路径
+//        以工作区根目录为基准，没有工作区就解析不到样式，PDF 会变成没排版的裸文本）
+//
+// 导出方法：打开 book/ 下任意一章 .md，Ctrl+Shift+P -> "Markdown PDF: Export (pdf)"
+{
+  // 样式表。相对路径以**工作区根目录**为基准（因为 stylesRelativePathFile
+  // 默认为 false）。所以用 VSCode 打开 D:\Learning\Pytorch\MNIST_CNN 这个
+  // 文件夹后再导出，这里就写 "styles/book.css"。
+  // 若要脱离工作区使用，可换成绝对路径 "D:/Learning/Pytorch/MNIST_CNN/styles/book.css"
+  "markdown-pdf.styles": ["styles/book.css"],
+
+  // 关掉插件自带的默认样式，避免和 book.css 打架
+  "markdown-pdf.includeDefaultStyles": false,
+
+  // 【重要】指定浏览器。插件用 puppeteer-core 出 PDF，它自己不捆绑浏览器：
+  // 找不到 Chrome/Edge 时会去下载约 150MB 的 Chromium。
+  // 本机没装 Chrome，但 Windows 11 自带 Edge（Chromium 内核），直接指过去。
+  // 若你的 Edge 装在别处，改成你自己的路径。
+  "markdown-pdf.executablePath": "C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe",
+  "markdown-pdf.chromium.autoDownload": false,
+
+  "markdown-pdf.type": ["pdf"],
+  "markdown-pdf.format": "A4",
+  "markdown-pdf.printBackground": true,
+  "markdown-pdf.displayHeaderFooter": false,
+
+  // 页边距。与 styles/book.css 里的 @page 设置配合使用。
+  "markdown-pdf.margin.top": "18mm",
+  "markdown-pdf.margin.bottom": "18mm",
+  "markdown-pdf.margin.left": "16mm",
+  "markdown-pdf.margin.right": "16mm",
+
+  // 代码高亮主题
+  "markdown-pdf.highlight": true,
+  "markdown-pdf.highlightStyle": "github.css",
+
+  // 不要把单个换行当成 <br>（否则正文里换行会被硬断行）
+  "markdown-pdf.breaks": false
+}
