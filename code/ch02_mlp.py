@@ -71,6 +71,11 @@ def set_seed(seed: int) -> None:
     np.random.seed(seed)
     torch.manual_seed(seed)
     torch.cuda.manual_seed_all(seed)
+    # 让 GPU 训练结果可复现 —— 不设的话同一份代码、同一个种子，每次跑出来
+    # 都不完全一样，书里"对照 results/ 里的日志确认结果一致"这句话就不成立了。
+    # 实测与原因见第 3 章常见坑 2。
+    torch.backends.cudnn.deterministic = True
+    torch.backends.cudnn.benchmark = False
 
 
 def get_device() -> torch.device:
