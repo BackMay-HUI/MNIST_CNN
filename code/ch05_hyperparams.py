@@ -66,6 +66,22 @@ CANONICAL_LR = 0.01
 # 扫参子实验书里跑的是 8 轮（16 组配置 × 8 轮，全跑一遍要十几分钟）
 SWEEP_EPOCHS = 8
 
+# 书上两条正式命令的完整取值 —— **每个能改变产物的开关都要在这里判一遍**。
+#
+# 本项目因为"漏一个开关"翻过四次车：第 2 章漏 `--epochs`/`--limit`，
+# 第 4 章漏 `--level`，第 6 章漏 `--depth`，验收时又发现**每一章都漏了 `--seed`**，
+# 而本章练习 3 就叫读者换种子跑。本章还多一种漏法：
+#
+#   旧版只要"轮数对"就算正式，于是 `--sweep lr` 这种**部分扫参**也会写正式的
+#   `results/ch05_sweep.csv` —— 书里那张表是 16 行（四个子实验全扫），
+#   读者照练习 4 跑一次 `--sweep optimizer`，表就只剩 3 行了。
+#
+# 所以每个开关都进表。可执行的版本见 `tests/test_canonical_guard.py`。
+_SINGLE = dict(epochs=CANONICAL_EPOCHS, sweep="none", limit=0, seed=42,
+               batch_size=128, lr=CANONICAL_LR, momentum=0.9, patience=3)
+_SWEEP = dict(_SINGLE, epochs=SWEEP_EPOCHS, sweep="all")
+CANONICAL = (_SINGLE, _SWEEP)
+
 # 第 7 章要加载这个文件，所以路径固定（见 ledger 的 Ruling 5）
 CHECKPOINT = RESULTS / "best_cnn.pt"
 
@@ -140,13 +156,22 @@ def is_canonical(args: argparse.Namespace) -> bool:
 
     书上有两条正式命令，各自对应一组产物：
         单次训练（产出 best_cnn.pt）        --epochs 10
-        扫参（产出 ch05_*_sweep 等图）      --epochs 8 --sweep <某个>
-    两者都要求非冒烟、lr 为默认值。其余跑法一律加后缀，免得覆盖正式产物。
+        扫参（产出 ch05_sweep.csv 等）      --epochs 8 --sweep all
+
+    两条都逐项对上面那两张表。特别地：
+
+      - **部分扫参不算正式。** `--sweep lr` 也会走到写 CSV 的那段代码，
+        但书里那张 16 行表是四个子实验全扫出来的，少扫几个等于把表换了。
+      - `--seed` / `--batch-size` / `--momentum` / `--patience` 每一个都能
+        改变曲线和 checkpoint，全都要对。
+
+    **`--verify-checkpoint` 故意不进这两张表。** 它只做一件事：把 checkpoint
+    读回来验一遍，不写任何训练产物；而它要读的路径正是 `checkpoint_path(args)`
+    给出来的。把它算成"非正式"会让书上那条验证命令去找一个不存在的文件。
     """
-    if args.smoke or args.lr != CANONICAL_LR:
-        return False
-    want = CANONICAL_EPOCHS if args.sweep == "none" else SWEEP_EPOCHS
-    return args.epochs == want
+    return (not args.smoke) and any(
+        all(getattr(args, k) == v for k, v in ref.items()) for ref in CANONICAL
+    )
 
 
 def tagged(base: str, args: argparse.Namespace) -> Path:

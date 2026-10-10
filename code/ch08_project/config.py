@@ -71,6 +71,27 @@ class Config:
     results_dir: Path = RESULTS
 
     @property
+    def is_canonical(self) -> bool:
+        """这次跑的是不是**书上那条命令** —— 也就是"一个开关都没改"。
+
+            书上那条命令：python code/ch08_project/train.py
+
+        为什么判断条件能简单成一行：dataclass 白送 `__eq__`，
+        "全是默认值"就等于"和 `Config()` 相等"。而 `Config()` 的默认值
+        是**唯一的**那一份（连 argparse 的默认值都从这里取），
+        所以**往 `Config` 里加一个新的超参，这个判断自动跟着变准**，
+        不存在"忘了把它加进判断里"这回事。
+
+        这一点值得说清楚：第 2~7 章每章都手写一个 `is_canonical`，
+        把"哪些开关算数"一项一项列出来。那个写法翻过四次车 ——
+        第 2 章漏 `--epochs`/`--limit`，第 4 章漏 `--level`，第 6 章漏 `--depth`，
+        验收时又发现每一章都漏了 `--seed`。**不是谁不小心，是那种写法本身
+        要求人每加一个参数就记得回去补一行。** 本章换成"和默认值比"，
+        把这件事从"记得"变成了"不可能忘"。
+        """
+        return self == Config()
+
+    @property
     def checkpoint(self) -> Path:
         """这个工程的产物 checkpoint。
 
@@ -82,10 +103,17 @@ class Config:
         （第 5 章 Ruling 34 就是这么栽的）。
 
         所以本章的产物叫 `ch08_best.pt`，与第 5 章并存、互不干扰。
-        冒烟运行时再退一步，叫 `ch08_best_smoke.pt`，绝不碰正式产物。
+
+        非正式运行（改过任何开关）一律另起名字，绝不碰 `ch08_best.pt` ——
+        书里 8.4 节引用了它的 md5（`ee167b40…`），被换掉就说不清了。
+        后缀里的 `e{epochs}_s{seed}` 只是个"能认出来"的标记，不是配置摘要；
+        这次跑的**完整**配置在 `train.py` 开头那行 `[配置] {cfg}` 里。
         """
-        name = "ch08_best_smoke.pt" if self.smoke else "ch08_best.pt"
-        return self.results_dir / name
+        if self.smoke:
+            return self.results_dir / "ch08_best_smoke.pt"
+        if self.is_canonical:
+            return self.results_dir / "ch08_best.pt"
+        return self.results_dir / f"ch08_best_e{self.epochs}_s{self.seed}.pt"
 
     @classmethod
     def from_args(cls, args) -> "Config":

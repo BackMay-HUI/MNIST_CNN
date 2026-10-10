@@ -136,10 +136,17 @@ def is_canonical(args: argparse.Namespace) -> bool:
     **每个能改变产物的参数都要在这里判一遍** —— `--tsne-samples` 只影响六张图里
     的一张，但它一旦被改，这批产物就不是书里那一批了。按「一条命令一个出口」
     （第 5 章 5.7 节），整批一起加后缀，不做"某几张正式、某几张探索"的混合。
+
+    本章初版漏了 `--seed` / `--epochs` / `--batch-size` 三个：它们平时看不出
+    问题（只在 checkpoint 缺失、现场补训时才起作用，见 7.2 节），但只要补训
+    发生，产出的就是另一个模型、另一批数字。`--seed` 尤其要防 —— 本项目
+    每一章都漏过它，而第 4/5/6 章的练习 3 就叫读者换种子跑。
     """
     if args.smoke or args.limit != 0 or args.n_errors != 20:
         return False
     if args.tsne_samples != CANONICAL_TSNE_SAMPLES:
+        return False
+    if args.seed != 42 or args.epochs != 10 or args.batch_size != 256:
         return False
     return Path(args.ckpt).resolve() == (RESULTS / "best_cnn.pt").resolve()
 
@@ -153,8 +160,13 @@ def tagged(base: str, args: argparse.Namespace) -> Path:
         tag = "smoke"
     elif args.tsne_samples != CANONICAL_TSNE_SAMPLES:
         tag = f"tsne{args.tsne_samples}"
+    elif args.seed != 42:
+        # 换种子的探索性运行（练习 3）单独起名，免得几次探索互相覆盖
+        tag = f"seed{args.seed}"
+    elif args.epochs != 10:
+        tag = f"e{args.epochs}"
     else:
-        tag = f"e{args.epochs}" if args.epochs != 10 else "alt"
+        tag = "alt"
     return FIGURES / f"{stem}_{tag}.{ext}"
 
 

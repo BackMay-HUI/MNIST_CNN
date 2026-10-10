@@ -29,7 +29,9 @@
   "markdown-pdf.printBackground": true,
   "markdown-pdf.displayHeaderFooter": false,
 
-  // 页边距。与 styles/book.css 里的 @page 设置配合使用。
+  // 页边距。**页边距完全由这四行决定** —— styles/book.css 里的 @page 只设了纸张尺寸
+  // （size: A4），body 的 margin/padding 都是 0。所以要是漏了合并这四行，
+  // 导出的 PDF 会几乎没有页边距，正文贴着纸边。
   "markdown-pdf.margin.top": "18mm",
   "markdown-pdf.margin.bottom": "18mm",
   "markdown-pdf.margin.left": "16mm",

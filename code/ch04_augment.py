@@ -56,6 +56,17 @@ N_VAL = 10000
 # 光靠 `--smoke` 后缀不够 —— 判断标准是"这是不是书上那条命令"，不是"是不是冒烟"。
 CANONICAL_EPOCHS = 10
 
+# 书上那条命令的完整取值 —— **每个能改变产物的开关都要在这里判一遍**。
+#
+# 本项目已经因为"漏一个开关"翻过四次车（第 2 章漏 `--epochs`/`--limit`，
+# 本章漏 `--level`，第 6 章漏 `--depth`），验收时又发现**每一章都漏了 `--seed`**。
+# 最后这条尤其要命：本章**练习 3** 就叫读者换 `--seed 1/2` 再跑一遍 ——
+# 照着书上的练习做，就会把书里的图弄坏。
+#
+# 所以这里写成一张表，以后加参数往表里补一行即可。可执行的版本见
+# `tests/test_canonical_guard.py`：每个开关都列成了一个用例，漏了就会红。
+CANONICAL = dict(epochs=CANONICAL_EPOCHS, limit=0, seed=42, batch_size=128, lr=0.01)
+
 LEVELS = ("none", "light", "strong")
 LEVEL_LABEL = {"none": "不增强", "light": "轻增强", "strong": "强增强"}
 
@@ -126,8 +137,13 @@ def is_canonical(args: argparse.Namespace) -> bool:
     """这次运行是不是"书上写的那条命令"（三档全跑 + 默认轮数 + 非冒烟）。
 
     只有它才允许写 `ch04_compare.png` / `ch04_compare.csv` 这两个被书引用的产物。
+
+    判断分两半：`--level` 单独判（书上那条命令不给这个开关），
+    其余的开关全部由上面那张 `CANONICAL` 表兜住。
     """
-    return (not args.smoke) and args.epochs == CANONICAL_EPOCHS and args.level is None
+    return (not args.smoke) and args.level is None and all(
+        getattr(args, k) == v for k, v in CANONICAL.items()
+    )
 
 
 def tagged(base: str, args: argparse.Namespace) -> Path:

@@ -50,12 +50,24 @@ RESULTS = ROOT / "results"
 MNIST_MEAN, MNIST_STD = 0.1307, 0.3081
 N_VAL = 10000
 
-# 正式命令：不带 --bn/--dropout、不带 --smoke、轮数为默认值 —— 也就是"四组全跑"那次。
+# 正式命令：不带 --bn/--dropout、不带 --smoke、全部超参为默认值 —— 也就是"四组全跑"那次。
 # 只有它允许写 figures/ch06_gap.png。理由见第 4 章 4.5 节 + 第 5 章 5.7 节。
 CANONICAL_EPOCHS = 10
 
 # Dropout 的丢弃概率。全连接层用 0.5 是经典默认值（见 6.3 节）。
 DROPOUT_P = 0.5
+
+# 书上那条命令的完整取值 —— **每个能改变产物的开关都要在这里判一遍**。
+#
+# 本项目因为"漏一个开关"翻过四次车：第 2 章漏 `--epochs`/`--limit`，
+# 第 4 章漏 `--level`，**本章漏 `--depth`**，验收时又发现每一章都漏了 `--seed` ——
+# 而本章练习 3 就叫读者换种子跑。以后加参数，往这张表里补一行即可。
+#
+# 可执行的版本见 `tests/test_canonical_guard.py`：每个开关都是一个用例，漏了就会红。
+# 注意那里没有 `--dropout-p 0.5` 这个用例 —— 它和默认值相同，产物一个字节都不会变，
+# 拿它当"探索性运行"是过度防卫，真正该列的是 `--dropout-p 0.3` 这种改了值的。
+CANONICAL = dict(epochs=CANONICAL_EPOCHS, limit=0, seed=42, batch_size=128,
+                 lr=0.01, momentum=0.9, depth=2, dropout_p=DROPOUT_P)
 
 
 # ---------------------------------------------------------------------------
@@ -126,13 +138,13 @@ def _savefig(fig, path: Path, attempts: int = 5) -> None:
 def is_canonical(args: argparse.Namespace) -> bool:
     """这次运行是不是「书上写的那条命令」。
 
-    正式命令 = 四组全跑（没给 --bn/--dropout）+ 默认轮数 + 默认层数 + 非冒烟。
+    正式命令 = 四组全跑（没给 --bn/--dropout）+ 上面那张表逐项对得上。
     只跑一组（--bn 之类）或换层数（--depth 3）都是探索，产物另起名字，
     免得盖掉书里那张对照图。
     """
-    if args.smoke or args.epochs != CANONICAL_EPOCHS or args.depth != 2:
+    if args.smoke or args.bn or args.dropout:
         return False
-    return not (args.bn or args.dropout)
+    return all(getattr(args, k) == v for k, v in CANONICAL.items())
 
 
 def tagged(base: str, args: argparse.Namespace) -> Path:

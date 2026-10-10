@@ -122,10 +122,59 @@ def _savefig(fig, path: Path, attempts: int = 5) -> None:
             time.sleep(1.0)
 
 
-def out_figure(base: str, smoke: bool) -> Path:
-    """冒烟产物一律加 `_smoke` 后缀，避免覆盖书里引用的正式图（详见第 2 章常见坑 5）。"""
+# 书里两条正式命令各自用的轮数。
+CANONICAL_EPOCHS = 10          # `python ch03_cnn.py --epochs 10`          -> 图 3-1、图 3-2
+CANONICAL_COMPARE_EPOCHS = 5   # `python ch03_cnn.py --compare-inits --epochs 5` -> 图 3-3
+
+# 两条正式命令的完整取值 —— **每个能改变产物的开关都要在这里判一遍**。
+#
+# 写成一张表、而不是串成一行 and，是因为"漏一个"这件事在本项目里复发过四次：
+# 第 2 章漏过 `--epochs`/`--limit`，第 4 章漏过 `--level`，第 6 章漏过 `--depth`，
+# 验收时又发现**每一章都漏了 `--seed`**。而本章练习 7 就叫读者跑 `--epochs 3`
+# 去量耗时 —— 照着练习做一遍，书里的图就没了。
+#
+# 以后再加参数，往这两张表里补一行即可。可执行的版本见
+# `tests/test_canonical_guard.py`：每个开关都列成了一个用例，漏了就会红。
+_COMMON = dict(limit=0, seed=42, batch_size=128, lr=0.01)
+CANONICAL_CURVE = dict(_COMMON, epochs=CANONICAL_EPOCHS, init="kaiming")
+CANONICAL_COMPARE = dict(_COMMON, epochs=CANONICAL_COMPARE_EPOCHS)
+
+
+def _matches(a: argparse.Namespace, ref: dict) -> bool:
+    """表里每一项的取值都对得上吗 —— 这就是"是不是书上那条命令"的判断。"""
+    return all(getattr(a, k) == v for k, v in ref.items())
+
+
+def is_canonical_curve(a: argparse.Namespace) -> bool:
+    """这次运行是不是产出**图 3-1（卷积核响应）和图 3-2（训练曲线）**那条命令。
+
+    和上一章同一个坑，而且在这里更容易踩：书里**练习 7** 让读者跑
+    `--epochs 3`（为了量耗时）。本章初版只要不是冒烟就写正式文件名，
+    于是照练习做一遍，`ch03_curve_kaiming.png` 和 `ch03_feature_maps.png`
+    就被 3 轮的结果**静默换掉了**（实测 `51b4bad1…` → `5fffcc91…`）。
+    """
+    return (not a.smoke) and (not a.compare_inits) and _matches(a, CANONICAL_CURVE)
+
+
+def is_canonical_compare(a: argparse.Namespace) -> bool:
+    """这次运行是不是产出**图 3-3（四档初始化对比）**那条命令。
+
+    单独判一次，是因为它的轮数（5）和上面那条（10）不同 ——
+    用一个统一的 `is_canonical` 会把图 3-3 也误伤成非正式产物。
+    """
+    return (not a.smoke) and a.compare_inits and _matches(a, CANONICAL_COMPARE)
+
+
+def out_figure(base: str, a: argparse.Namespace, canonical: bool) -> Path:
+    """正式运行用原名，其余一律加后缀（`_smoke` 或 `_e{N}`）。
+
+    哪些产物需要保护、由哪条命令产出，见上面两个 `is_canonical_*`。
+    """
     stem, ext = base.rsplit(".", 1)
-    return FIGURES / (f"{stem}_smoke.{ext}" if smoke else base)
+    if canonical:
+        return FIGURES / base
+    tag = "smoke" if a.smoke else f"e{a.epochs}"
+    return FIGURES / f"{stem}_{tag}.{ext}"
 
 
 # ---------------------------------------------------------------------------
@@ -666,7 +715,7 @@ def main() -> None:
             print("=" * 62)
             histories[mode], _, _, _ = run_once(mode, args, device)
 
-        out = out_figure("ch03_init_compare.png", args.smoke)
+        out = out_figure("ch03_init_compare.png", args, is_canonical_compare(args))
         plot_init_compare(histories, out)
         print("=" * 62)
         print(f"[产出] 已保存 {out}")
@@ -682,13 +731,16 @@ def main() -> None:
 
     history, _, _, model = run_once(args.init, args, device)
 
-    out = out_figure(f"ch03_curve_{args.init}.png", args.smoke)
+    canonical = is_canonical_curve(args)
+    out = out_figure(f"ch03_curve_{args.init}.png", args, canonical)
     plot_curve(history, out, f"第 3 章 SimpleCNN 训练曲线（init={args.init}）")
     print(f"[产出] 已保存 {out}")
+    if not canonical and args.init == "kaiming":
+        print(f"       （非正式运行，产物带后缀，不会覆盖书里的 {FIGURES / 'ch03_curve_kaiming.png'}）")
 
     # 特征图：只有单次训练时画（对比模式下有 4 个模型，画哪个都不合适）
     _, _, test_loader = get_loaders(args.batch_size, limit=args.limit, seed=args.seed)
-    fm_out = out_figure("ch03_feature_maps.png", args.smoke)
+    fm_out = out_figure("ch03_feature_maps.png", args, canonical)
     plot_feature_maps(model, test_loader, fm_out, device)
     print(f"[产出] 已保存 {fm_out}（conv1 的 32 个卷积核各看到了什么）")
     if args.smoke:
