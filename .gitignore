@@ -4,5 +4,15 @@ results/
 __pycache__/
 *.pyc
 *.pdf
-.vscode/
+
+# VSCode 的**工作区**设置要跟着仓库走：里面是导出 PDF 的那套 markdown-pdf 配置，
+# 别人 clone 下来打开文件夹就该能直接导，不用再手工合并一份到自己机器上。
+# 只放行 settings.json —— launch.json、tasks.json 这类多半是个人口味。
+.vscode/*
+!.vscode/settings.json
+
+# tests/build_book_pdf.sh 的中间产物与截图
+_book_merged.*
+_shots/
+_th/
 .~lock.*

@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<title>$title$</title>
+<!--
+  【顺序有讲究】高亮样式必须在 book.css **之前**。
+
+  skylighting 生成的那段 CSS 不只定义 token 颜色，还顺手改了代码块的
+  margin / line-height / 打印时的缩进。book.css 是样式的唯一权威，
+  必须让它后加载、在同权重时胜出。**这两行的先后不能调换。**
+
+  这里没有用 pandoc 的默认模板，正是为了不要它那份自带样式表：
+  默认模板会塞进 `body { max-width: 36em; padding: 50px }` 之类，
+  和 book.css 逐条抢，抢赢抢输取决于顺序，排查起来是噩梦。
+  自定义模板里只有 book.css 一份样式，谁生效一目了然。
+-->
+$if(highlighting-css)$
+<style>
+$highlighting-css$
+</style>
+$endif$
+$for(css)$
+<link rel="stylesheet" href="$css$" />
+$endfor$
+</head>
+<body>
+<!--
+  封面走 `--include-before-body` 插到这里，**必须在 nav#TOC 之前** ——
+  模板里 `$toc$` 展开的是目录本身，而目录永远排在正文之前。
+  封面若放在正文（$body$）的开头，渲染出来就是「目录 → 封面 → 正文」，
+  顺序是反的。
+-->
+$for(include-before)$
+$include-before$
+$endfor$
+$if(toc)$
+<nav id="TOC" role="doc-toc">
+<h2 id="toc-title">$toc-title$</h2>
+$toc$
+</nav>
+$endif$
+$body$
+</body>
+</html>

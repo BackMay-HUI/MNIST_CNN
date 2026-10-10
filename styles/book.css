@@ -222,3 +222,92 @@ input[type="checkbox"] { margin-right: 6px; }
   h1 { page-break-before: always; }
   pre, table, blockquote, img { page-break-inside: avoid; }
 }
+
+/* ===========================================================================
+   以下是「整本合并导出」才需要的东西
+
+   单章导出（VSCode 插件）用不到封面和目录，但留着不影响 —— 它们只在有对应
+   元素时才生效。合并导出走的是 pandoc，所以还要压一压 pandoc 自带的样式。
+   =========================================================================== */
+
+/* ---------------------------------------------------------------------------
+   封面
+   --------------------------------------------------------------------------- */
+.cover {
+  text-align: center;
+  padding-top: 95mm;
+  page-break-after: always;
+}
+
+.cover-title {
+  font-size: 30pt;
+  font-weight: 700;
+  color: #0b2b5c;
+  line-height: 1.4;
+  border-bottom: 3px solid #2f6feb;
+  display: inline-block;
+  padding-bottom: 16px;
+}
+
+.cover-sub {
+  font-size: 13pt;
+  color: #35506e;
+  margin-top: 30px;
+}
+
+.cover-meta {
+  font-size: 10.5pt;
+  color: #6a737d;
+  margin-top: 70px;
+  line-height: 2;
+}
+
+/* ---------------------------------------------------------------------------
+   目录（pandoc --toc 生成的 <nav id="TOC">）
+   --------------------------------------------------------------------------- */
+#TOC {
+  page-break-after: always;
+  font-size: 10.5pt;
+}
+
+#TOC > ul { list-style: none; padding-left: 0; margin: 0; }
+#TOC > ul > li { margin: 11px 0 4px 0; }
+
+/* 章标题那行加粗 */
+#TOC > ul > li > a { font-weight: 600; color: #0b2b5c; }
+
+#TOC ul ul { list-style: none; padding-left: 22px; margin: 4px 0 0 0; }
+#TOC ul ul li { margin: 3px 0; color: #57606a; }
+
+/* 目录里不要那圈蓝色下划线，太吵 */
+#TOC a { border-bottom: none; }
+
+/* ---------------------------------------------------------------------------
+   压掉 pandoc 自带的高亮样式中和我们打架的部分
+
+   pandoc 走的是 skylighting，输出结构和 markdown-it 不同：代码块外面多套一层
+   `<div class="sourceCode">`，每行还插了个行号锚点 `<a href="#cb1-1">`。
+   那个 <a> 会命中上面的 `a { border-bottom: 1px solid ... }`，把代码行全画上
+   蓝色下划线。必须中和掉。
+   --------------------------------------------------------------------------- */
+/* skylighting 在代码块外面套的这层 div，有两件事必须由它兜住：
+
+   1. **边距**。pandoc 自己写着 `pre.sourceCode { margin: 0 }`，权重 (0,1,1)
+      **高过** book.css 的 `pre { margin: 14px 0 }` (0,0,1) —— 内层 pre 的边距
+      被清零了。不在这层 div 上补回来，代码块会紧贴正文。
+
+   2. **底色**。每个高亮主题都自带一个 background-color（kate 是纯白
+      #ffffff），画在这层 div 上。pre 那 14px 外边距仍算 div 的 padding-box，
+      于是代码框上下会各多出一条主题底色的横带 —— 白带压在浅灰代码框上，
+      非常显眼。这里清掉，底色只由 book.css 的 `pre { background }` 说了算。 */
+div.sourceCode { margin: 14px 0; background: none; }
+
+pre a, pre code a { color: inherit; border-bottom: none; text-decoration: none; }
+
+/* pandoc 给每个 <span> 设了 line-height: 1.25，会把代码行压得比正文紧 */
+pre code.sourceCode > span { line-height: 1.6; }
+
+/* 打印时 pandoc 让代码 `white-space: pre-wrap` —— **这一条我们故意留着**。
+   全书 715 行代码里有 11 行超过 80 字符、最长 141 字符（第 3 章那条报错）。
+   `pre` 不折行的话超出部分会被纸张直接裁掉，读者看不到；折行至少内容是全的。
+   它同时给折下来的续行加了 5em 悬挂缩进，正好把续行和真实换行区分开。 */

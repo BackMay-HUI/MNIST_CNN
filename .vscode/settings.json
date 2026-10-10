@@ -1,0 +1,44 @@
+// 《PyTorch 实战：MNIST 手写数字识别》—— 工作区级导出配置
+//
+// 放在仓库里就不用再去改用户设置了：用 VSCode **打开文件夹** MNIST_CNN，
+// 这些设置自动生效。之前 styles/vscode-settings.json 要求手工合并进用户
+// settings.json，那一步没做，所以导出的 PDF 一直是插件默认样式。
+//
+// 注意：仓库 .gitignore 里有 `.vscode/`，所以这个文件**不会提交**。
+// 别人 clone 下来仍然要自己配一遍 —— 见 README「怎么导出 PDF」。
+{
+  // 相对路径的基准是**工作区根目录**（stylesRelativePathFile 默认为 false），
+  // 所以这里写 "styles/book.css" 而不是 "../styles/book.css"。
+  "markdown-pdf.styles": ["styles/book.css"],
+
+  // 关掉插件自带的 markdown.css / highlight.css，否则会和 book.css 打架
+  // （默认是 true，正是"样式没出来"的观感来源之一）
+  "markdown-pdf.includeDefaultStyles": false,
+
+  // 用系统自带的 Edge 出 PDF，避免插件去下 150MB 的 Chromium
+  "markdown-pdf.executablePath": "C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe",
+  "markdown-pdf.chromium.autoDownload": false,
+
+  "markdown-pdf.type": ["pdf"],
+  "markdown-pdf.format": "A4",
+  "markdown-pdf.printBackground": true,
+  "markdown-pdf.displayHeaderFooter": false,
+
+  // 页边距**只由这四行决定**：book.css 里的 @page 只设了纸张尺寸，
+  // body 的 margin/padding 都是 0。漏了这四行，正文会贴着纸边。
+  "markdown-pdf.margin.top": "18mm",
+  "markdown-pdf.margin.bottom": "18mm",
+  "markdown-pdf.margin.left": "16mm",
+  "markdown-pdf.margin.right": "16mm",
+
+  "markdown-pdf.highlight": true,
+  "markdown-pdf.highlightStyle": "github.css",
+
+  // 单个换行不当成 <br>，否则正文里换行会被硬断行
+  "markdown-pdf.breaks": false,
+
+  // 顺带把**编辑器预览**（Ctrl+Shift+V）也接上同一份样式 ——
+  // 预览走的是另一个键 markdown.styles，和导出的 markdown-pdf.styles 不通用。
+  // 这样调格式时不用反复导 PDF。
+  "markdown.styles": ["styles/book.css"]
+}

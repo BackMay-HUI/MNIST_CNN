@@ -118,24 +118,64 @@ C:/Users/ASUS/.conda/envs/pytorch/python.exe code/ch03_cnn.py --help
 
 ### 3. 怎么导出 PDF
 
+两条路，产物不一样。
+
+**A. 整本书 —— 一份带封面、目录、页码的 PDF（推荐）**
+
+```bash
+bash tests/build_book_pdf.sh
+# -> book/PyTorch_MNIST_全书.pdf   （约 160 页）
+```
+
+依赖 `pandoc` + Node 22+ + Edge（Windows 11 自带）。**不需要 VSCode**，
+也不需要装任何 Python 包。管线是：
+
+```
+book/*.md --拼接--> pandoc --> HTML --> Edge(DevTools 协议) --> PDF
+```
+
+想顺带截几张图核对排版：
+
+```bash
+bash tests/build_book_pdf.sh book/out.pdf _shots sel:img sel:table sel:blockquote.warn
+```
+
+`sel:` 后面写 CSS 选择器，脚本会滚到第一个匹配的元素再截图
+（也可以在 `sel:` 的位置写 `y:8000` 直接给纵坐标）。
+
+排版文件都在 `styles/`：
+
+| 文件 | 作用 |
+|---|---|
+| `book.css` | 全部样式。**两条导出路径共用这一份** |
+| `pdf-template.html` | 合并导出的页面骨架（为什么不用 pandoc 默认模板，文件里有注释） |
+| `cover.html` | 封面 |
+| `print_pdf.js` | 驱动 Edge 出 PDF，负责页码 |
+
+<blockquote class="warn">
+
+**改 `book.css` 要重新导一次才看得到** —— 它是运行时读的，不参与构建缓存。
+
+另外：pandoc 会把正文里的直引号 `"` 转成中文弯引号 `“ ”`（本书正文有 1372 处），
+中文排版这样才对。VSCode 那条路（markdown-it）不做这个转换，所以两条路的
+引号长相会有差别，属于预期。
+
+</blockquote>
+
+**B. 单章，在 VSCode 里导 —— 只想单独看某一章时用**
+
 需要 VSCode + **Markdown PDF** 插件（`yzane.markdown-pdf`）。
 
-**步骤**：
-
 1. 用 VSCode **打开文件夹** `MNIST_CNN`
-   （**必须打开文件夹**，不能只打开单个 `.md` —— 样式表的相对路径以工作区根目录为基准，
-   没有工作区就加载不到样式，PDF 会变成没排版的裸文本）
-2. 把 `styles/vscode-settings.json` 里的配置**合并**进你的 VSCode `settings.json`
-   （`Ctrl+Shift+P` → `Preferences: Open User Settings (JSON)`）
-3. 打开 `book/` 下任意一章 `.md`
-4. `Ctrl+Shift+P` → `Markdown PDF: Export (pdf)`
+   （**必须打开文件夹**，不能只打开单个 `.md`，也**不能打开它的上级目录** ——
+   工作区设置只认被打开的那一层。`MNIST_CNN/.vscode/settings.json` 里已经配好了，
+   打开对文件夹就自动生效，不用再手工合并任何东西）
+2. 打开 `book/` 下任意一章 `.md`
+3. `Ctrl+Shift+P` → `Markdown PDF: Export (pdf)`
 
-**那份配置做了三件事**（文件里有逐条注释）：
-
-- 指定 `styles/book.css` 排版，并关掉插件自带样式（免得打架）
-- **指定用 Edge 出 PDF** —— 插件自己不捆绑浏览器，
-  不指的话它会去下载约 150MB 的 Chromium
-- 设好 A4 和页边距
+那份工作区配置做了四件事（文件里有逐条注释）：指定 `styles/book.css`、关掉插件自带样式、
+指定用 Edge 出 PDF（不指的话插件会去下载约 150MB 的 Chromium）、设好 A4 和页边距。
+另外它还给 `markdown.styles` 接了同一份 CSS，所以 `Ctrl+Shift+V` 的**预览**也是排好版的。
 
 ---
 
