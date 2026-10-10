@@ -1,0 +1,34 @@
+==========================================================
+ 环境自检报告 —— 修复后
+ 采集时间: 2026-10-10
+ 环境: conda 'pytorch'  |  C:\Users\ASUS\.conda\envs\pytorch
+==========================================================
+
+--- 1. 版本与可见性 ---
+Python     : 3.9.25
+torch      : 2.8.0+cu128
+CUDA(build): 12.8
+is_available: True
+device     : NVIDIA GeForce RTX 5060 Laptop GPU
+capability : (12, 0)
+arch_list  : ['sm_61', 'sm_70', 'sm_75', 'sm_80', 'sm_86', 'sm_90', 'sm_100', 'sm_120']
+
+--- 2. 逐算子实测（每个算子独立进程）---
+  matmul               OK
+  Linear               OK
+  ReLU                 OK
+  Conv2d forward       OK
+  Conv2d backward      OK
+  MaxPool2d            OK
+  BatchNorm2d          OK
+  AdaptiveAvgPool      OK
+  CrossEntropy         OK
+  softmax              OK
+
+--- 3. 端到端：一个真正的 CNN 前向 + 反向 ---
+  CNN 前向+反向        OK  out=(64, 10)  loss=2.3393
+
+--- 4. 结论 ---
+  torch 2.8.0+cu128 的 arch_list 含 sm_100 与 sm_120，与 RTX 5060 匹配。
+  先前失败的 ReLU / Conv2d / MaxPool / BatchNorm / CrossEntropy 全部恢复。
+==========================================================

@@ -1,0 +1,36 @@
+==========================================================
+ 环境自检报告 —— 修复前
+ 采集时间: 2026-10-10
+ 环境: conda 'pytorch'  |  C:\Users\ASUS\.conda\envs\pytorch
+==========================================================
+
+--- 1. 版本与可见性 ---
+Python     : 3.9.25
+torch      : 2.8.0+cu126
+CUDA(build): 12.6
+is_available: True
+device     : NVIDIA GeForce RTX 5060 Laptop GPU
+capability : (12, 0)  -> sm_120 (Blackwell)
+
+--- 2. 这个 torch 编译覆盖了哪些算力 ---
+arch_list: ['sm_61', 'sm_70', 'sm_75', 'sm_80', 'sm_86', 'sm_90']
+
+--- 3. 逐算子实测（每个算子独立进程，因为 CUDA 错误会污染上下文）---
+  matmul               OK
+  Linear               OK
+  ReLU                 FAIL  CUDA error: no kernel image is available for execution on th
+  Conv2d forward       FAIL  CUDA error: no kernel image is available for execution on th
+  Conv2d backward      FAIL  CUDA error: no kernel image is available for execution on th
+  MaxPool2d            FAIL  CUDA error: no kernel image is available for execution on th
+  BatchNorm2d          FAIL  CUDA error: no kernel image is available for execution on th
+  AdaptiveAvgPool      FAIL  CUDA error: no kernel image is available for execution on th
+  CrossEntropy         FAIL  CUDA error: no kernel image is available for execution on th
+  softmax              FAIL  CUDA error: no kernel image is available for execution on th
+
+--- 4. 结论 ---
+  is_available() 返回 True，连 matmul 都能跑，但 ReLU / Conv2d / MaxPool /
+  BatchNorm / CrossEntropy 全部失败。
+  原因: torch 2.8.0+cu126 只编译到 sm_90，本机 RTX 5060 是 sm_120。
+  走 cuBLAS 的 matmul/Linear 恰好有可用路径，其余走 torch 自研 kernel 的算子没有。
+  => 这个环境无法训练 CNN，但表面症状会误导人。
+==========================================================
